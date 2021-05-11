@@ -1,25 +1,25 @@
 const game = (function () {
-  let player1;
-  let player2;
-  let activePlayer;
+  const state = {};
 
   function start(p1, p2) {
-    player1 = p1;
-    player2 = p2;
-    activePlayer = player1;
+    state.player1 = p1;
+    state.player2 = p2;
+    state.activePlayer = p1;
   }
 
   function switchActivePlayer() {
-    activePlayer = activePlayer === player1 ? player2 : player1;
+    state.activePlayer =
+      state.activePlayer === state.player1 ? state.player2 : state.player1;
   }
 
   function playRound(info) {
-    info.mark = activePlayer.getMark();
+    info.mark = state.activePlayer.getMark();
     const successful = gameBoard.addMark(info);
 
     if (successful) {
       displayController.render(info);
       switchActivePlayer();
+      return;
     }
   }
 
@@ -119,8 +119,5 @@ const boardListener = (function () {
   };
 })();
 
-const player1 = Player(1, "X");
-const player2 = Player(2, "O");
-
-game.start(player1, player2);
+game.start(Player(1, "X"), Player(2, "O"));
 boardListener.subscribe(game.playRound);
