@@ -129,6 +129,9 @@ const Player = (name, mark) => {
 };
 
 const displayController = (function () {
+  // board Dom elements
+  const boardTiles = document.querySelectorAll(".tile");
+
   function createMarkElement(mark) {
     const element = document.createElement("span");
     element.classList.add("mark");
@@ -142,46 +145,21 @@ const displayController = (function () {
     info.tile.appendChild(mark);
   }
 
-  return {
-    render,
-  };
-})();
-
-// Listen for click events on the Board
-const boardListener = (function () {
-  // board Dom elements
-  const tiles = document.querySelectorAll(".tile");
-  let subscribers = [];
-
-  function subscribe(fn) {
-    subscribers.push(fn);
-  }
-
-  function unsubscribe(fnToRemove) {
-    const index = subscribers.indexOf(fnToRemove);
-    if (index >= 0) {
-      subscribers.splice(index, 1);
-    }
-  }
-
-  function notifyAll() {
+  function tileClicked() {
     const info = {
       tile: this,
       index: this.id,
     };
 
-    for (const fn of subscribers) {
-      fn(info);
-    }
+    game.playRound(info);
   }
 
-  tiles.forEach((tile) => tile.addEventListener("click", notifyAll));
+  //Event Listeners
+  boardTiles.forEach((tile) => tile.addEventListener("click", tileClicked));
 
   return {
-    subscribe,
-    unsubscribe,
+    render,
   };
 })();
 
 game.start(Player(1, "X"), Player(2, "O"));
-boardListener.subscribe(game.playRound);
