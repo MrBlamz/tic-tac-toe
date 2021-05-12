@@ -179,7 +179,7 @@ const displayController = (function () {
 
   // Updates the active player
   function renderActivePlayer(name) {
-    activePlayerElement.textContent = `${name} turn`;
+    activePlayerElement.textContent = `${name}'s turn`;
   }
 
   // Renders the winner
