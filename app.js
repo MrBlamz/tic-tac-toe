@@ -71,6 +71,7 @@ const game = (function () {
 
       incrementRound();
       switchActivePlayer();
+      displayController.renderActivePlayer(state.activePlayer.getName());
       return;
     }
   }
@@ -110,7 +111,7 @@ const gameBoard = (function () {
 
 const Player = (name, mark) => {
   const state = {
-    name: `Player${name}`,
+    name: `Player ${name}`,
     mark,
   };
 
@@ -129,8 +130,10 @@ const Player = (name, mark) => {
 };
 
 const displayController = (function () {
-  // board Dom elements
+  // Board DOM elements
   const boardTiles = document.querySelectorAll(".tile");
+  // Active player element
+  const activePlayerElement = document.getElementById("active-player");
 
   function createMarkElement(mark) {
     const element = document.createElement("span");
@@ -143,6 +146,10 @@ const displayController = (function () {
   function render(info) {
     const mark = createMarkElement(info.mark);
     info.tile.appendChild(mark);
+  }
+
+  function renderActivePlayer(name) {
+    activePlayerElement.textContent = `${name} turn`;
   }
 
   function tileClicked() {
@@ -159,6 +166,7 @@ const displayController = (function () {
 
   return {
     render,
+    renderActivePlayer,
   };
 })();
 
