@@ -156,6 +156,10 @@ const displayController = (function () {
   const winnerElement = document.getElementById("winner");
   // Button inside modal that restarts game
   const playAgainBtn = document.getElementById("play-again");
+  // Elements to blur on modal popup
+  const header = document.getElementsByTagName("header")[0];
+  const gameInfo = document.getElementsByClassName("game-info")[0];
+  const boardContainer = document.getElementsByClassName("board-container")[0];
 
   function createMarkElement(mark) {
     const element = document.createElement("span");
@@ -185,11 +189,21 @@ const displayController = (function () {
   function renderResultsModal(text) {
     winnerElement.textContent = text;
     modal.style.display = "block";
+    addBlur(header);
+    addBlur(gameInfo);
+    addBlur(boardContainer);
   }
 
   // Hides the results modal
   function disableResultsModal() {
     modal.style.display = "none";
+    addBlur(header, "0px");
+    addBlur(gameInfo, "0px");
+    addBlur(boardContainer, "0px");
+  }
+
+  function addBlur(element, amount = "4px") {
+    element.style.filter = `blur(${amount})`;
   }
 
   function tileClicked() {
