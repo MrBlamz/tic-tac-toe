@@ -61,3 +61,7 @@ header {
   text-align: center;
   font-size: 50px;
 }
+
+.modal-content button {
+  font-size: 25px;
+}

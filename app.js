@@ -8,6 +8,16 @@ const game = (function () {
     state.round = 1;
   }
 
+  function restart() {
+    state.round = 1;
+    state.activePlayer = state.player1;
+    state.winner = null;
+    gameBoard.clear();
+    displayController.renderActivePlayer(state.activePlayer.getName());
+    displayController.clearBoard();
+    displayController.disableResultsModal();
+  }
+
   function switchActivePlayer() {
     state.activePlayer =
       state.activePlayer === state.player1 ? state.player2 : state.player1;
@@ -53,7 +63,7 @@ const game = (function () {
     const successful = gameBoard.addMark(info);
 
     if (successful) {
-      displayController.render(info);
+      displayController.renderBoard(info);
 
       if (isWinner(info.mark)) {
         state.winner = state.activePlayer;
@@ -79,6 +89,7 @@ const game = (function () {
   return {
     start,
     playRound,
+    restart,
   };
 })();
 
@@ -103,9 +114,14 @@ const gameBoard = (function () {
     }, []);
   }
 
+  function clear() {
+    board = [null, null, null, null, null, null, null, null, null];
+  }
+
   return {
     addMark,
     getTile,
+    clear,
   };
 })();
 
@@ -138,6 +154,8 @@ const displayController = (function () {
   const modal = document.getElementById("results-modal");
   // Element that display the winner inside the modal
   const winnerElement = document.getElementById("winner");
+  // Button inside modal that restarts game
+  const playAgainBtn = document.getElementById("play-again");
 
   function createMarkElement(mark) {
     const element = document.createElement("span");
@@ -147,9 +165,15 @@ const displayController = (function () {
   }
 
   // Renders the gameBoard content
-  function render(info) {
+  function renderBoard(info) {
     const mark = createMarkElement(info.mark);
     info.tile.appendChild(mark);
+  }
+
+  function clearBoard() {
+    boardTiles.forEach((tile) => {
+      tile.innerHTML = "";
+    });
   }
 
   // Updates the active player
@@ -163,6 +187,11 @@ const displayController = (function () {
     modal.style.display = "block";
   }
 
+  // Hides the results modal
+  function disableResultsModal() {
+    modal.style.display = "none";
+  }
+
   function tileClicked() {
     const info = {
       tile: this,
@@ -174,11 +203,14 @@ const displayController = (function () {
 
   //Event Listeners
   boardTiles.forEach((tile) => tile.addEventListener("click", tileClicked));
+  playAgainBtn.addEventListener("click", game.restart);
 
   return {
-    render,
+    renderBoard,
     renderActivePlayer,
     renderResultsModal,
+    clearBoard,
+    disableResultsModal,
   };
 })();
 
