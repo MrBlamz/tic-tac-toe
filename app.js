@@ -6,6 +6,7 @@ const game = (function () {
     state.player2 = p2;
     state.activePlayer = p1;
     state.round = 1;
+    displayController.renderActivePlayer(state.activePlayer.getName());
   }
 
   function restart() {
@@ -125,7 +126,7 @@ const gameBoard = (function () {
 
 const Player = (name, mark) => {
   const state = {
-    name: `Player ${name}`,
+    name,
     mark,
   };
 
@@ -227,4 +228,4 @@ const displayController = (function () {
   };
 })();
 
-game.start(Player(1, "X"), Player(2, "O"));
+game.start(Player("Player 1", "X"), Player("Player 2", "O"));
