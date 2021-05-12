@@ -14,8 +14,6 @@ const game = (function () {
     state.winner = null;
     gameBoard.clear();
     displayController.renderActivePlayer(state.activePlayer.getName());
-    displayController.clearBoard();
-    displayController.disableResultsModal();
   }
 
   function switchActivePlayer() {
@@ -215,16 +213,20 @@ const displayController = (function () {
     game.playRound(info);
   }
 
+  function restart() {
+    game.restart();
+    clearBoard();
+    disableResultsModal();
+  }
+
   //Event Listeners
   boardTiles.forEach((tile) => tile.addEventListener("click", tileClicked));
-  playAgainBtn.addEventListener("click", game.restart);
+  playAgainBtn.addEventListener("click", restart);
 
   return {
     renderBoard,
     renderActivePlayer,
     renderResultsModal,
-    clearBoard,
-    disableResultsModal,
   };
 })();
 
