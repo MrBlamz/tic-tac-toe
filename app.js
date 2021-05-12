@@ -57,7 +57,7 @@ const game = (function () {
 
       if (isWinner(info.mark)) {
         state.winner = state.activePlayer;
-        console.log(`Winner: ${state.winner.getName()}`);
+        displayController.renderResultsModal(`${state.winner.getName()} wins`);
         return;
       }
 
@@ -65,7 +65,7 @@ const game = (function () {
       // so it's a tie
       if (state.round === 9) {
         state.winner = "Tie";
-        console.log("It's a tie!");
+        displayController.renderResultsModal("It's a tie");
         return;
       }
 
@@ -134,6 +134,10 @@ const displayController = (function () {
   const boardTiles = document.querySelectorAll(".tile");
   // Active player element
   const activePlayerElement = document.getElementById("active-player");
+  // Modal element that displays the winner
+  const modal = document.getElementById("results-modal");
+  // Element that display the winner inside the modal
+  const winnerElement = document.getElementById("winner");
 
   function createMarkElement(mark) {
     const element = document.createElement("span");
@@ -148,8 +152,15 @@ const displayController = (function () {
     info.tile.appendChild(mark);
   }
 
+  // Updates the active player
   function renderActivePlayer(name) {
     activePlayerElement.textContent = `${name} turn`;
+  }
+
+  // Renders the winner
+  function renderResultsModal(text) {
+    winnerElement.textContent = text;
+    modal.style.display = "block";
   }
 
   function tileClicked() {
@@ -167,6 +178,7 @@ const displayController = (function () {
   return {
     render,
     renderActivePlayer,
+    renderResultsModal,
   };
 })();
 
