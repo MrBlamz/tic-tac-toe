@@ -4,17 +4,37 @@ const game = (function () {
   function start(p1, p2) {
     state.player1 = p1;
     state.player2 = p2;
-    state.activePlayer = p1;
-    state.round = 1;
-    displayController.renderActivePlayer(state.activePlayer.getName());
+    drawStartingPlayer(p1, p2);
+    setStartingRound();
+    displayController.renderActivePlayer(getActivePlayerName());
+    activePlayerIsComputer() ? triggerComputerPlay() : false;
   }
 
   function restart() {
-    state.round = 1;
-    state.activePlayer = state.player1;
-    state.winner = null;
+    setStartingRound();
+    drawStartingPlayer(state.player1, state.player2);
+    removePreviousWinner();
     gameBoard.clear();
-    displayController.renderActivePlayer(state.activePlayer.getName());
+    displayController.renderActivePlayer(getActivePlayerName());
+    activePlayerIsComputer() ? triggerComputerPlay() : false;
+  }
+
+  function drawStartingPlayer(p1, p2) {
+    const players = [p1, p2];
+    const rnd = Math.floor(Math.random() * 2);
+    state.activePlayer = players[rnd];
+  }
+
+  function activePlayerIsComputer() {
+    return getActivePlayerName().includes("Computer");
+  }
+
+  function triggerComputerPlay() {
+    // Gives one second delay to prevent instant AI play
+    // (active player DOM element does not update otherwise)
+    setTimeout(() => {
+      state.activePlayer.play();
+    }, 1000);
   }
 
   function switchActivePlayer() {
@@ -22,8 +42,36 @@ const game = (function () {
       state.activePlayer === state.player1 ? state.player2 : state.player1;
   }
 
+  function getActivePlayerName() {
+    return state.activePlayer.getName();
+  }
+
+  function getActivePlayerMark() {
+    return state.activePlayer.getMark();
+  }
+
+  function setWinner(winner) {
+    state.winner = winner;
+  }
+
+  function getWinnerName() {
+    return state.winner.getName();
+  }
+
+  function removePreviousWinner() {
+    state.winner = null;
+  }
+
+  function setStartingRound() {
+    state.round = 1;
+  }
+
   function incrementRound() {
     state.round = state.round += 1;
+  }
+
+  function isLastRound() {
+    return state.round === 9;
   }
 
   // Check possible combinations against current player mark and returns a boolean
@@ -31,14 +79,14 @@ const game = (function () {
     let isWinner = false;
     const winCombination = `${mark}${mark}${mark}`;
     const winOptions = {
-      1: gameBoard.getTile(0, 1, 2),
-      2: gameBoard.getTile(3, 4, 5),
-      3: gameBoard.getTile(6, 7, 8),
-      4: gameBoard.getTile(0, 3, 6),
-      5: gameBoard.getTile(1, 4, 7),
-      6: gameBoard.getTile(2, 5, 8),
-      7: gameBoard.getTile(0, 4, 8),
-      8: gameBoard.getTile(2, 4, 6),
+      1: gameBoard.getPosition(0, 1, 2),
+      2: gameBoard.getPosition(3, 4, 5),
+      3: gameBoard.getPosition(6, 7, 8),
+      4: gameBoard.getPosition(0, 3, 6),
+      5: gameBoard.getPosition(1, 4, 7),
+      6: gameBoard.getPosition(2, 5, 8),
+      7: gameBoard.getPosition(0, 4, 8),
+      8: gameBoard.getPosition(2, 4, 6),
     };
 
     // Iterate over win options and match each against winner string
@@ -58,30 +106,30 @@ const game = (function () {
       return;
     }
 
-    info.mark = state.activePlayer.getMark();
+    info.mark = getActivePlayerMark();
     const successful = gameBoard.addMark(info);
 
     if (successful) {
       displayController.renderBoard(info);
 
       if (isWinner(info.mark)) {
-        state.winner = state.activePlayer;
-        displayController.renderResultsModal(`${state.winner.getName()} wins`);
+        setWinner(state.activePlayer);
+        displayController.renderResultsModal(`${getWinnerName()} wins`);
         return;
       }
 
       // If round is 9 and there is no winner means the board is full
       // so it's a tie
-      if (state.round === 9) {
-        state.winner = "Tie";
+      if (isLastRound()) {
+        setWinner("Tie");
         displayController.renderResultsModal("It's a tie");
         return;
       }
 
       incrementRound();
       switchActivePlayer();
-      displayController.renderActivePlayer(state.activePlayer.getName());
-      return;
+      displayController.renderActivePlayer(getActivePlayerName());
+      activePlayerIsComputer() ? triggerComputerPlay() : false;
     }
   }
 
@@ -106,9 +154,18 @@ const gameBoard = (function () {
   }
 
   // Returns an array with the content of board values at parameter indexes
-  function getTile(...indexes) {
+  function getPosition(...indexes) {
     return indexes.reduce((result, index) => {
       board[index] === null ? result.push("null") : result.push(board[index]);
+      return result;
+    }, []);
+  }
+
+  function getEmptyPositions() {
+    return board.reduce((result, value, index) => {
+      if (value === null) {
+        result.push(index);
+      }
       return result;
     }, []);
   }
@@ -119,7 +176,8 @@ const gameBoard = (function () {
 
   return {
     addMark,
-    getTile,
+    getPosition,
+    getEmptyPositions,
     clear,
   };
 })();
@@ -128,6 +186,7 @@ const Player = (name, mark) => {
   const state = {
     name,
     mark,
+    active: false,
   };
 
   function getMark() {
@@ -143,6 +202,21 @@ const Player = (name, mark) => {
     getName,
   };
 };
+
+function Computer(name, mark) {
+  const prototype = Player(name, mark);
+
+  function play() {
+    const availablePositions = gameBoard.getEmptyPositions();
+    // Select a random empty position
+    const position = Math.floor(Math.random() * availablePositions.length);
+    const choice = availablePositions[position];
+    // Clicks the tile to make a play
+    displayController.getTile(choice).click();
+  }
+
+  return Object.assign({}, prototype, { play });
+}
 
 const displayController = (function () {
   // Board DOM elements
@@ -202,6 +276,10 @@ const displayController = (function () {
     element.style.filter = `blur(${amount})`;
   }
 
+  function getTile(index) {
+    return boardTiles[index];
+  }
+
   function tileClicked() {
     const info = {
       tile: this,
@@ -225,7 +303,8 @@ const displayController = (function () {
     renderBoard,
     renderActivePlayer,
     renderResultsModal,
+    getTile,
   };
 })();
 
-game.start(Player("Player 1", "X"), Player("Player 2", "O"));
+game.start(Player("Player 1", "X"), Computer("Computer", "O"));
