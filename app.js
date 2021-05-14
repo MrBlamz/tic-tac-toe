@@ -186,7 +186,6 @@ const Player = (name, mark) => {
   const state = {
     name,
     mark,
-    active: false,
   };
 
   function getMark() {
