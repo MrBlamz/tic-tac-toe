@@ -7,7 +7,7 @@ const game = (function () {
     drawStartingPlayer(p1, p2);
     setStartingRound();
     displayController.renderActivePlayer(getActivePlayerName());
-    activePlayerIsComputer() ? triggerComputerPlay() : false;
+    activePlayerIsComputer() ? triggerComputerPlay(100) : false;
   }
 
   function restart() {
@@ -16,7 +16,7 @@ const game = (function () {
     removePreviousWinner();
     gameBoard.clear();
     displayController.renderActivePlayer(getActivePlayerName());
-    activePlayerIsComputer() ? triggerComputerPlay() : false;
+    activePlayerIsComputer() ? triggerComputerPlay(100) : false;
   }
 
   function drawStartingPlayer(p1, p2) {
@@ -29,12 +29,12 @@ const game = (function () {
     return getActivePlayerName().includes("Computer");
   }
 
-  function triggerComputerPlay() {
-    // Gives one second delay to prevent instant AI play
-    // (active player DOM element does not update otherwise)
+  // If no timeout is given and AI is first playing the page freezes on loading
+  // while AI is calculating the best move
+  function triggerComputerPlay(timeout) {
     setTimeout(() => {
       state.activePlayer.play();
-    }, 1000);
+    }, timeout);
   }
 
   function switchActivePlayer() {
@@ -86,14 +86,12 @@ const game = (function () {
     if (successful) {
       displayController.renderBoard(info);
 
-      if (gameBoard.hasWinner(info.mark)) {
+      if (gameBoard.isTerminalState(info.mark)) {
         setWinner(state.activePlayer);
         displayController.renderResultsModal(`${getWinnerName()} wins`);
         return;
       }
 
-      // If round is 9 and there is no winner means the board is full
-      // so it's a tie
       if (isLastRound()) {
         setWinner("Tie");
         displayController.renderResultsModal("It's a tie");
@@ -103,7 +101,7 @@ const game = (function () {
       incrementRound();
       switchActivePlayer();
       displayController.renderActivePlayer(getActivePlayerName());
-      activePlayerIsComputer() ? triggerComputerPlay() : false;
+      activePlayerIsComputer() ? triggerComputerPlay(1000) : false;
     }
   }
 
@@ -121,15 +119,17 @@ const gameBoard = (function () {
   function addMark(info) {
     if (board[info.index] === null) {
       board[info.index] = info.mark;
+      // Successfully added the player mark
       return true;
     }
 
+    // Chosen position is already filled
     return false;
   }
 
-  // Check possible combinations against current player mark and returns a boolean
-  function hasWinner(mark) {
-    let isWinner = false;
+  // Returns true if board has winner and false otherwise
+  function isTerminalState(mark) {
+    let hasWinner = false;
     const winCombination = `${mark}${mark}${mark}`;
     const winOptions = {
       1: getPosition(0, 1, 2),
@@ -145,12 +145,12 @@ const gameBoard = (function () {
     // Iterate over win options and match each against winner string
     for (const option in winOptions) {
       if (winOptions[option].join("") === winCombination) {
-        isWinner = true;
+        hasWinner = true;
         break;
       }
     }
 
-    return isWinner;
+    return hasWinner;
   }
 
   // Returns an array with the content of board values at parameter indexes
@@ -161,6 +161,7 @@ const gameBoard = (function () {
     }, []);
   }
 
+  // Returns index of the board which have no player mark
   function getEmptyPositions() {
     return board.reduce((result, value, index) => {
       if (value === null) {
@@ -170,8 +171,14 @@ const gameBoard = (function () {
     }, []);
   }
 
+  // Return board
+  function getBoard() {
+    return board;
+  }
+
+  // Fill the array with null (Initial state)
   function clear() {
-    board = [null, null, null, null, null, null, null, null, null];
+    board = Array(9).fill(null);
   }
 
   return {
@@ -179,7 +186,8 @@ const gameBoard = (function () {
     getPosition,
     getEmptyPositions,
     clear,
-    hasWinner,
+    isTerminalState,
+    getBoard,
   };
 })();
 
@@ -206,13 +214,99 @@ const Player = (name, mark) => {
 function Computer(name, mark) {
   const prototype = Player(name, mark);
 
+  function terminalState() {
+    if (gameBoard.isTerminalState("X")) {
+      return { score: -10 };
+    }
+
+    if (gameBoard.isTerminalState("O")) {
+      return { score: 10 };
+    }
+  }
+
+  function hasMovesLeft(arr) {
+    return arr.length > 0 ? true : false;
+  }
+
+  function minimax(board, mark, depth, isMax) {
+    let availablePositions = gameBoard.getEmptyPositions();
+    const isTerminal = terminalState(depth);
+
+    // Return score if a winner is found
+    if (isTerminal) {
+      return isTerminal;
+    }
+
+    // Return if no moves left (Tie = 0)
+    if (!hasMovesLeft(availablePositions)) {
+      return { score: 0 };
+    }
+
+    // Store all available possible moves
+    let moves = [];
+
+    // Iterate over each possible empty position on the board
+    for (let i = 0; i < availablePositions.length; i++) {
+      // Creates a move object
+      let move = {};
+      // Add an index prop to move obj
+      move.index = availablePositions[i];
+
+      // Place the player mark on the board
+      board[availablePositions[i]] = mark;
+
+      // Calculate all possible game results based on the mark placed previously
+      if (mark === "O") {
+        let result = minimax(board, "X", depth + 1, false);
+        // Add prop to move obj with the heuristics move score
+        move.score = result.score - depth;
+      } else {
+        let result = minimax(board, "O", depth + 1, true);
+        move.score = result.score + depth;
+      }
+
+      // Remove previous placed player mark from the board
+      board[availablePositions[i]] = null;
+
+      // Add the move obj to the moves variable
+      moves.push(move);
+    }
+
+    // Variable that stores index of the best move
+    let bestMove;
+
+    // If the active player is the AI (Chooses the higher score)
+    if (isMax) {
+      let bestScore = -1000;
+      // Iterate over all previous calculated moves
+      for (let i = 0; i < moves.length; i++) {
+        // If the current score is higher than previous best score store it
+        if (moves[i].score > bestScore) {
+          bestScore = moves[i].score;
+          bestMove = i;
+        }
+      }
+    }
+
+    // If the active player is opponent (Chooses the lower score)
+    if (!isMax) {
+      let bestScore = 1000;
+      for (let i = 0; i < moves.length; i++) {
+        // If the current score is lower than previous best score store it
+        if (moves[i].score < bestScore) {
+          bestScore = moves[i].score;
+          bestMove = i;
+        }
+      }
+    }
+
+    // Return the position of the board which is the best move
+    return moves[bestMove];
+  }
+
   function play() {
-    const availablePositions = gameBoard.getEmptyPositions();
-    // Select a random empty position
-    const position = Math.floor(Math.random() * availablePositions.length);
-    const choice = availablePositions[position];
-    // Clicks the tile to make a play
-    displayController.getTile(choice).click();
+    let bestMove = minimax(gameBoard.getBoard(), "O", 0, true);
+    displayController.getTile(bestMove.index).click();
   }
 
   return Object.assign({}, prototype, { play });
@@ -307,4 +401,4 @@ const displayController = (function () {
   };
 })();
 
-game.start(Player("Player 1", "X"), Computer("Computer", "O"));
+game.start(Player("Player", "X"), Computer("Computer", "O"));
