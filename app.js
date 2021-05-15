@@ -74,32 +74,6 @@ const game = (function () {
     return state.round === 9;
   }
 
-  // Check possible combinations against current player mark and returns a boolean
-  function isWinner(mark) {
-    let isWinner = false;
-    const winCombination = `${mark}${mark}${mark}`;
-    const winOptions = {
-      1: gameBoard.getPosition(0, 1, 2),
-      2: gameBoard.getPosition(3, 4, 5),
-      3: gameBoard.getPosition(6, 7, 8),
-      4: gameBoard.getPosition(0, 3, 6),
-      5: gameBoard.getPosition(1, 4, 7),
-      6: gameBoard.getPosition(2, 5, 8),
-      7: gameBoard.getPosition(0, 4, 8),
-      8: gameBoard.getPosition(2, 4, 6),
-    };
-
-    // Iterate over win options and match each against winner string
-    for (const option in winOptions) {
-      if (winOptions[option].join("") === winCombination) {
-        isWinner = true;
-        break;
-      }
-    }
-
-    return isWinner;
-  }
-
   function playRound(info) {
     // If game has winner stop execution
     if (state.winner) {
@@ -112,7 +86,7 @@ const game = (function () {
     if (successful) {
       displayController.renderBoard(info);
 
-      if (isWinner(info.mark)) {
+      if (gameBoard.hasWinner(info.mark)) {
         setWinner(state.activePlayer);
         displayController.renderResultsModal(`${getWinnerName()} wins`);
         return;
@@ -153,6 +127,32 @@ const gameBoard = (function () {
     return false;
   }
 
+  // Check possible combinations against current player mark and returns a boolean
+  function hasWinner(mark) {
+    let isWinner = false;
+    const winCombination = `${mark}${mark}${mark}`;
+    const winOptions = {
+      1: getPosition(0, 1, 2),
+      2: getPosition(3, 4, 5),
+      3: getPosition(6, 7, 8),
+      4: getPosition(0, 3, 6),
+      5: getPosition(1, 4, 7),
+      6: getPosition(2, 5, 8),
+      7: getPosition(0, 4, 8),
+      8: getPosition(2, 4, 6),
+    };
+
+    // Iterate over win options and match each against winner string
+    for (const option in winOptions) {
+      if (winOptions[option].join("") === winCombination) {
+        isWinner = true;
+        break;
+      }
+    }
+
+    return isWinner;
+  }
+
   // Returns an array with the content of board values at parameter indexes
   function getPosition(...indexes) {
     return indexes.reduce((result, index) => {
@@ -179,6 +179,7 @@ const gameBoard = (function () {
     getPosition,
     getEmptyPositions,
     clear,
+    hasWinner,
   };
 })();
 
