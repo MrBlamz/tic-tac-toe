@@ -95,9 +95,11 @@ main {
 }
 
 .modal-content {
-  position: relative;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   background-color: #fefefe;
-  margin: 10% auto;
   padding: 20px;
   border: 1px solid #888;
   border-radius: 10px;
@@ -154,16 +156,12 @@ main {
   }
 
   .board-container {
-    margin-top: 10%;
+    margin-top: 5vh;
   }
 
   .board {
     width: 50vh;
     height: 50vh;
-  }
-
-  .modal-content {
-    margin-top: 40%;
   }
 
   .modal-body p {
@@ -172,11 +170,6 @@ main {
 
   button {
     font-size: 50px;
-  }
-
-  .modal-header,
-  .modal-footer {
-    display: none;
   }
 }
 
@@ -197,10 +190,6 @@ main {
   .board {
     width: 85vw;
     height: 85vw;
-  }
-
-  .modal-content {
-    margin-top: 50%;
   }
 
   .modal-body p {
