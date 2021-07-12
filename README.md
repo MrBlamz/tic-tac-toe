@@ -2,7 +2,7 @@
 
 Classic game played on the browser against the computer.
 
-## Tecnologies Used
+## Technologies Used
 
 - HTML
 - CSS
